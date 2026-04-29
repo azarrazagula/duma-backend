@@ -2,8 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
+const path = require("path");
 const connectDB = require("./config/db");
-const productRoutes = require("./routes/productRoutes");
 
 // Initialize app
 const app = express();
@@ -15,11 +15,14 @@ connectDB();
 // Middleware
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "http://localhost:3001"],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
 }));
 app.use(express.json());
+
+// Static folder for uploads
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Request logger
 app.use((req, res, next) => {
@@ -28,9 +31,11 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use("/api", productRoutes);
+app.use("/api/user", require("./routes/userRoutes"));
+app.use("/api/admin", require("./routes/adminRoutes"));
 
 app.get("/", (req, res) => {
+
     res.json({ message: "Duma Backend API is running smoothly!" });
 });
 
