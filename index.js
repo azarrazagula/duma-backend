@@ -16,7 +16,7 @@ connectDB();
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"],
+    origin: ["http://localhost:3000", "http://localhost:3001", "http://192.168.29.128:3000"],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   }),

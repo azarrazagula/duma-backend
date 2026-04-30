@@ -2,7 +2,72 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
+const jwt = require("jsonwebtoken");
 const Product = require("../models/Product");
+const Admin = require("../models/Admin");
+
+// Generate JWT
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: "30d",
+  });
+};
+
+// @desc    Admin login
+// @route   POST /api/admin/login
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const admin = await Admin.findOne({ email }).select("+password");
+
+    if (admin && (await admin.matchPassword(password))) {
+      res.json({
+        _id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        token: generateToken(admin._id),
+      });
+    } else {
+      res.status(401).json({ message: "Invalid email or password" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// @desc    Admin register
+// @route   POST /api/admin/register
+router.post("/register", async (req, res) => {
+  const { name, email, password } = req.body;
+
+  try {
+    const adminExists = await Admin.findOne({ email });
+
+    if (adminExists) {
+      return res.status(400).json({ message: "Admin already exists" });
+    }
+
+    const admin = await Admin.create({
+      name,
+      email,
+      password,
+    });
+
+    if (admin) {
+      res.status(201).json({
+        _id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        token: generateToken(admin._id),
+      });
+    } else {
+      res.status(400).json({ message: "Invalid admin data" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 // Configure Multer for Image Uploads
 const storage = multer.diskStorage({
@@ -32,7 +97,7 @@ router.get("/allproducts", async (req, res) => {
 router.post("/addproducts", upload.single("image"), async (req, res) => {
   try {
     const { name, price, description, category, size, stock } = req.body;
-    
+
     const productData = {
       name,
       price,
@@ -55,9 +120,9 @@ router.post("/addproducts", upload.single("image"), async (req, res) => {
 router.put("/updateproducts/:id", upload.single("image"), async (req, res) => {
   try {
     const updateData = { ...req.body };
-    
+
     // Ensure size is handled, it will be inside req.body
-    
+
     // If a new image is uploaded, update the image path
     if (req.file) {
       updateData.image = `/uploads/${req.file.filename}`;
