@@ -14,11 +14,13 @@ connectDB();
 
 // Middleware
 app.use(helmet({ crossOriginResourcePolicy: false }));
-app.use(cors({
+app.use(
+  cors({
     origin: ["http://localhost:3000", "http://localhost:3001"],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
-}));
+  }),
+);
 app.use(express.json());
 
 // Static folder for uploads
@@ -26,8 +28,10 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Request logger
 app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} request to ${req.url}`);
-    next();
+  console.log(
+    `${new Date().toISOString()} - ${req.method} request to ${req.url}`,
+  );
+  next();
 });
 
 // Routes
@@ -35,27 +39,28 @@ app.use("/api/user", require("./routes/userRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 
 app.get("/", (req, res) => {
-
-    res.json({ message: "Duma Backend API is running smoothly!" });
+  res.json({ message: "Duma Backend API is running smoothly!" });
 });
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ 
-        success: false, 
-        message: err.message || "Internal Server Error" 
-    });
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
 });
 
 const server = app.listen(PORT, () => {
-    console.log(`Server is running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+  console.log(
+    `Server is running in ${process.env.NODE_ENV} mode on port ${PORT}`,
+  );
 });
 
 server.on("error", (err) => {
-    if (err.code === "EADDRINUSE") {
-        console.error(`Port ${PORT} is already in use.`);
-    } else {
-        console.error("Server error:", err);
-    }
+  if (err.code === "EADDRINUSE") {
+    console.error(`Port ${PORT} is already in use.`);
+  } else {
+    console.error("Server error:", err);
+  }
 });
