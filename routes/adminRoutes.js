@@ -5,6 +5,8 @@ const path = require("path");
 const jwt = require("jsonwebtoken");
 const Product = require("../models/Product");
 const Admin = require("../models/Admin");
+const User = require("../models/User");
+const Order = require("../models/Order");
 
 // Generate JWT
 const generateToken = (id) => {
@@ -145,6 +147,40 @@ router.delete("/deleteproducts/:id", async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
     res.json({ message: "Product deleted" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// @desc    Get all orders
+// @route   GET /api/admin/orders
+router.get("/orders", async (req, res) => {
+  try {
+    const orders = await Order.find({}).populate("user", "name email").sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// @desc    Update order status
+// @route   PUT /api/admin/orders/:id/status
+router.put("/orders/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+    const order = await Order.findById(req.params.id);
+
+    if (order) {
+      order.status = status;
+      if (status === "Delivered") {
+        order.isDelivered = true;
+        order.deliveredAt = Date.now();
+      }
+      const updatedOrder = await order.save();
+      res.json(updatedOrder);
+    } else {
+      res.status(404).json({ message: "Order not found" });
+    }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

@@ -3,6 +3,8 @@ const router = express.Router();
 const jwt = require("jsonwebtoken");
 const Product = require("../models/Product");
 const User = require("../models/User");
+const Order = require("../models/Order");
+const { protect } = require("../middleware/authMiddleware");
 
 // Generate JWT
 const generateToken = (id) => {
@@ -78,6 +80,45 @@ router.get("/products", async (req, res) => {
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// @desc    Create new order
+// @route   POST /api/user/orders
+router.post("/orders", protect, async (req, res) => {
+  const { orderItems, shippingAddress, paymentMethod, totalPrice } = req.body;
+
+  if (orderItems && orderItems.length === 0) {
+    res.status(400).json({ message: "No order items" });
+    return;
+  } else {
+    const order = new Order({
+      orderItems,
+      user: req.user._id,
+      shippingAddress,
+      paymentMethod,
+      totalPrice,
+    });
+
+    try {
+      const createdOrder = await order.save();
+      res.status(201).json(createdOrder);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+});
+
+// @desc    Get logged in user orders
+// @route   GET /api/user/orders/my-orders
+router.get("/orders/my-orders", protect, async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.user._id }).sort({
+      createdAt: -1,
+    });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
