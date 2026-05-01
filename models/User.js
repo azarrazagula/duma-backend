@@ -27,16 +27,22 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       select: false,
     },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Encrypt password using bcrypt
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
+  console.log("Pre-save hook running...");
   if (!this.isModified("password")) {
-    next();
+    console.log("Password not modified, skipping hash.");
+    return;
   }
 
   const salt = await bcrypt.genSalt(10);

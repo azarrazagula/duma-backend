@@ -14,7 +14,6 @@ const productSchema = new mongoose.Schema(
     image: String,
     category: {
       type: String,
-      enum: ["T-Shirt", "Jeans"],
       required: true,
     },
     size: {
