@@ -47,17 +47,51 @@ This documentation tracks the step-by-step development of the DUMA Streetwear AP
 
 ## 🚀 API Architecture Summary
 
-### **Admin Endpoints (`/api/admin`)**
-- `GET /customers`: List all users.
-- `GET /customers/:id`: Detailed user stats.
-- `PATCH /customers/:id/block`: Toggle user status.
-- `GET /allcategories`: Fetch categories for admin.
-- `POST /categories`: Add new category with image.
-
 ### **User Endpoints (`/api/user`)**
-- `POST /login`: Secure login with block-check logic.
-- `POST /register`: New customer signup.
-- `GET /categories`: Public category listing.
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :---: |
+| **GET** | `/categories` | Fetch all product categories | ❌ |
+| **POST** | `/register` | Register a new user account | ❌ |
+| **POST** | `/login` | Authenticate user & get token | ❌ |
+| **GET** | `/products` | List all available products | ❌ |
+| **POST** | `/orders` | Create a new purchase order | ✅ |
+| **GET** | `/orders/my-orders` | View logged-in user's order history | ✅ |
+| **POST** | `/payment/create-order` | Initiate Razorpay order (returns order_id) | ✅ |
+| **POST** | `/payment/verify` | Verify Razorpay signature & mark order as paid | ✅ |
+
+### **Admin Endpoints (`/api/admin`)**
+
+#### **Customer & Admin Management**
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :---: |
+| **POST** | `/login` | Admin secure login | ❌ |
+| **GET** | `/customers` | List all registered customers | ✅ |
+| **GET** | `/customers/:id` | View specific customer details & order stats | ✅ |
+| **PUT/PATCH** | `/customers/:id/block` | Toggle customer block status | ✅ |
+| **DELETE** | `/customers/:id` | Delete a customer account | ✅ |
+
+#### **Category Management**
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :---: |
+| **GET** | `/categories` | List all categories for management | ✅ |
+| **POST** | `/categories` | Add new category with image upload | ✅ |
+| **PUT** | `/categories/:id` | Update category name/image | ✅ |
+| **DELETE** | `/categories/:id` | Delete category (Moves products to Uncategorized) | ✅ |
+
+#### **Product Management**
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :---: |
+| **GET** | `/allproducts` | List all products with full details | ✅ |
+| **POST** | `/addproducts` | Create new product with image upload | ✅ |
+| **PUT** | `/updateproducts/:id` | Update product details or images | ✅ |
+| **DELETE** | `/deleteproducts/:id` | Remove a product from the database | ✅ |
+
+#### **Order Management**
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :---: |
+| **GET** | `/orders` | View all customer orders globally | ✅ |
+| **PUT** | `/orders/:id/status` | Update order delivery/payment status | ✅ |
+| **GET** | `/payments/:paymentId` | Fetch payment details directly from Razorpay | ✅ |
 
 ---
 
@@ -83,4 +117,4 @@ This documentation tracks the step-by-step development of the DUMA Streetwear AP
 ## 📄 License
 Distributed under the MIT License.
 
-Built with ⚡ by [Ansar Ibrahim](https://github.com/azarrazagula)
+Built with ⚡ by [Azar Ibrahim](https://github.com/azarrazagula)

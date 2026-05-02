@@ -8,6 +8,14 @@ const Admin = require("../models/Admin");
 const User = require("../models/User");
 const Order = require("../models/Order");
 const Category = require("../models/Category");
+const Razorpay = require("razorpay");
+const { adminProtect } = require("../middleware/authMiddleware");
+
+// Initialize Razorpay
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 // Configure Multer for Image Uploads
 const storage = multer.diskStorage({
@@ -25,7 +33,7 @@ const upload = multer({ storage: storage });
 
 // @desc    Block/Unblock a customer
 // @route   PUT/PATCH /api/admin/customers/:id/block
-router.route("/customers/:id/block").put(async (req, res) => {
+router.route("/customers/:id/block").put(adminProtect, async (req, res) => {
   try {
     const customer = await User.findById(req.params.id);
     if (!customer) {
@@ -40,7 +48,7 @@ router.route("/customers/:id/block").put(async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-}).patch(async (req, res) => {
+}).patch(adminProtect, async (req, res) => {
   try {
     const customer = await User.findById(req.params.id);
     if (!customer) {
@@ -59,7 +67,7 @@ router.route("/customers/:id/block").put(async (req, res) => {
 
 // @desc    Get all customers
 // @route   GET /api/admin/customers
-router.get("/customers", async (req, res) => {
+router.get("/customers", adminProtect, async (req, res) => {
   try {
     const customers = await User.find({}).sort({ createdAt: -1 });
     res.json(customers);
@@ -70,7 +78,7 @@ router.get("/customers", async (req, res) => {
 
 // @desc    Get customer details and order stats
 // @route   GET /api/admin/customers/:id
-router.get("/customers/:id", async (req, res) => {
+router.get("/customers/:id", adminProtect, async (req, res) => {
   try {
     const customer = await User.findById(req.params.id);
     if (!customer) {
@@ -90,7 +98,7 @@ router.get("/customers/:id", async (req, res) => {
 
 // @desc    Delete a customer
 // @route   DELETE /api/admin/customers/:id
-router.delete("/customers/:id", async (req, res) => {
+router.delete("/customers/:id", adminProtect, async (req, res) => {
   try {
     const customer = await User.findById(req.params.id);
     if (!customer) {
@@ -107,7 +115,7 @@ router.delete("/customers/:id", async (req, res) => {
 
 // @desc    Get all categories for admin
 // @route   GET /api/admin/categories
-router.get(["/categories", "/allcategories"], async (req, res) => {
+router.get(["/categories", "/allcategories"], adminProtect, async (req, res) => {
   try {
     const categories = await Category.find({}).sort({ name: 1 });
     console.log(`Fetched ${categories.length} categories from database.`);
@@ -120,7 +128,7 @@ router.get(["/categories", "/allcategories"], async (req, res) => {
 
 // @desc    Add a new category
 // @route   POST /api/admin/categories
-router.post("/categories", upload.single("image"), async (req, res) => {
+router.post("/categories", adminProtect, upload.single("image"), async (req, res) => {
   try {
     console.log("Create Category Request Body:", req.body);
     const { name } = req.body;
@@ -149,7 +157,7 @@ router.post("/categories", upload.single("image"), async (req, res) => {
 
 // @desc    Update a category
 // @route   PUT /api/admin/categories/:id
-router.put("/categories/:id", upload.single("image"), async (req, res) => {
+router.put("/categories/:id", adminProtect, upload.single("image"), async (req, res) => {
   try {
     console.log(`PUT request received for category ID: ${req.params.id}`);
     const { name } = req.body;
@@ -179,7 +187,7 @@ router.put("/categories/:id", upload.single("image"), async (req, res) => {
 
 // @desc    Delete a category
 // @route   DELETE /api/admin/categories/:id
-router.delete("/categories/:id", async (req, res) => {
+router.delete("/categories/:id", adminProtect, async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
 
@@ -232,42 +240,10 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// @desc    Admin register
-// @route   POST /api/admin/register
-router.post("/register", async (req, res) => {
-  const { name, email, password } = req.body;
-
-  try {
-    const adminExists = await Admin.findOne({ email });
-
-    if (adminExists) {
-      return res.status(400).json({ message: "Admin already exists" });
-    }
-
-    const admin = await Admin.create({
-      name,
-      email,
-      password,
-    });
-
-    if (admin) {
-      res.status(201).json({
-        _id: admin._id,
-        name: admin.name,
-        email: admin.email,
-        token: generateToken(admin._id),
-      });
-    } else {
-      res.status(400).json({ message: "Invalid admin data" });
-    }
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
 
 // @desc    Get all products
 // @route   GET /api/admin/allproducts
-router.get("/allproducts", async (req, res) => {
+router.get("/allproducts", adminProtect, async (req, res) => {
   try {
     const products = await Product.find({}).sort({ createdAt: -1 });
     res.json(products);
@@ -278,7 +254,7 @@ router.get("/allproducts", async (req, res) => {
 
 // @desc    Add a new product with image
 // @route   POST /api/admin/addproducts
-router.post("/addproducts", upload.single("image"), async (req, res) => {
+router.post("/addproducts", adminProtect, upload.single("image"), async (req, res) => {
   try {
     const { name, price, description, category, size, stock } = req.body;
 
@@ -301,7 +277,7 @@ router.post("/addproducts", upload.single("image"), async (req, res) => {
 
 // @desc    Update a product with image
 // @route   PUT /api/admin/updateproducts/:id
-router.put("/updateproducts/:id", upload.single("image"), async (req, res) => {
+router.put("/updateproducts/:id", adminProtect, upload.single("image"), async (req, res) => {
   try {
     const updateData = { ...req.body };
 
@@ -325,7 +301,7 @@ router.put("/updateproducts/:id", upload.single("image"), async (req, res) => {
 
 // @desc    Delete a product
 // @route   DELETE /api/admin/deleteproducts/:id
-router.delete("/deleteproducts/:id", async (req, res) => {
+router.delete("/deleteproducts/:id", adminProtect, async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
     res.json({ message: "Product deleted" });
@@ -336,7 +312,7 @@ router.delete("/deleteproducts/:id", async (req, res) => {
 
 // @desc    Get all orders
 // @route   GET /api/admin/orders
-router.get("/orders", async (req, res) => {
+router.get("/orders", adminProtect, async (req, res) => {
   try {
     const orders = await Order.find({})
       .populate("user", "name email")
@@ -349,7 +325,7 @@ router.get("/orders", async (req, res) => {
 
 // @desc    Update order status
 // @route   PUT /api/admin/orders/:id/status
-router.put("/orders/:id/status", async (req, res) => {
+router.put("/orders/:id/status", adminProtect, async (req, res) => {
   try {
     const { status } = req.body;
     const order = await Order.findById(req.params.id);
@@ -367,6 +343,18 @@ router.put("/orders/:id/status", async (req, res) => {
     }
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// @desc    Check Razorpay Payment Status (Admin)
+// @route   GET /api/admin/payments/:paymentId
+router.get("/payments/:paymentId", adminProtect, async (req, res) => {
+  try {
+    const payment = await razorpay.payments.fetch(req.params.paymentId);
+    res.json(payment);
+  } catch (error) {
+    console.error("Fetch Payment Error:", error);
+    res.status(500).json({ message: "Failed to fetch payment details from Razorpay" });
   }
 });
 

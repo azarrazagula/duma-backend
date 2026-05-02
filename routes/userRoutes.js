@@ -6,6 +6,13 @@ const User = require("../models/User");
 const Order = require("../models/Order");
 const { protect } = require("../middleware/authMiddleware");
 const Category = require("../models/Category");
+const Razorpay = require("razorpay");
+
+// Initialize Razorpay
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 // @desc    Get all categories for users
 // @route   GET /api/user/categories
@@ -126,7 +133,7 @@ router.post("/orders", protect, async (req, res) => {
   }
 });
 
-// @desc    Get logged in user orders
+// @desc    Create logged in user orders
 // @route   GET /api/user/orders/my-orders
 router.get("/orders/my-orders", protect, async (req, res) => {
   try {
@@ -136,6 +143,67 @@ router.get("/orders/my-orders", protect, async (req, res) => {
     res.json(orders);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// --- Razorpay Payment Endpoints ---
+
+// @desc    Create Razorpay Order
+// @route   POST /api/user/payment/create-order
+router.post("/payment/create-order", protect, async (req, res) => {
+  const { amount } = req.body; // amount in INR
+
+  if (!amount) {
+    return res.status(400).json({ message: "Amount is required" });
+  }
+
+  const options = {
+    amount: amount * 100, // amount in the smallest currency unit (paise)
+    currency: "INR",
+    receipt: `receipt_${Date.now()}`,
+  };
+
+  try {
+    const order = await razorpay.orders.create(options);
+    res.status(201).json(order);
+  } catch (error) {
+    console.error("Razorpay Order Error:", error);
+    res.status(500).json({ message: "Failed to create Razorpay order" });
+  }
+});
+
+// @desc    Verify Razorpay Payment
+// @route   POST /api/user/payment/verify
+router.post("/payment/verify", protect, async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } =
+    req.body;
+
+  const crypto = require("crypto");
+  const hmac = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET);
+
+  hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+  const generated_signature = hmac.digest("hex");
+
+  if (generated_signature === razorpay_signature) {
+    // Payment is verified
+    try {
+      const order = await Order.findById(orderId);
+      if (order) {
+        order.isPaid = true;
+        order.paidAt = Date.now();
+        order.paymentMethod = "Razorpay";
+        order.razorpayPaymentId = razorpay_payment_id;
+        order.status = "Paid";
+        await order.save();
+        res.json({ success: true, message: "Payment verified successfully" });
+      } else {
+        res.status(404).json({ success: false, message: "Order not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  } else {
+    res.status(400).json({ success: false, message: "Invalid signature" });
   }
 });
 
