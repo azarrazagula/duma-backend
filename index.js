@@ -21,6 +21,8 @@ app.use(
       "http://localhost:3001",
       "http://192.168.29.128:3000",
       "http://192.168.29.128:3001",
+      "https://dumaapp.netlify.app",
+      "https://duma-adminpanel.netlify.app",
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,

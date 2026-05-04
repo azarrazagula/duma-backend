@@ -10,21 +10,13 @@ const Order = require("../models/Order");
 const Category = require("../models/Category");
 const Razorpay = require("razorpay");
 const { adminProtect } = require("../middleware/authMiddleware");
+const { storage } = require("../config/cloudinary");
+
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
-
-// Configure Multer for Image Uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Make sure this folder exists
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
 });
 
 const upload = multer({ storage: storage });
@@ -145,7 +137,7 @@ router.post("/categories", adminProtect, upload.single("image"), async (req, res
 
     const category = await Category.create({
       name,
-      image: req.file ? `/uploads/${req.file.filename}` : "",
+      image: req.file ? req.file.path : "",
     });
 
     res.status(201).json(category);
@@ -164,7 +156,7 @@ router.put("/categories/:id", adminProtect, upload.single("image"), async (req, 
     const updateData = { name };
 
     if (req.file) {
-      updateData.image = `/uploads/${req.file.filename}`;
+      updateData.image = req.file.path;
     }
 
     const updatedCategory = await Category.findByIdAndUpdate(
@@ -265,7 +257,7 @@ router.post("/addproducts", adminProtect, upload.single("image"), async (req, re
       category,
       size,
       stock,
-      image: req.file ? `/uploads/${req.file.filename}` : "", // Save image path
+      image: req.file ? req.file.path : "", // Save Cloudinary URL
     };
 
     const product = await Product.create(productData);
@@ -285,7 +277,7 @@ router.put("/updateproducts/:id", adminProtect, upload.single("image"), async (r
 
     // If a new image is uploaded, update the image path
     if (req.file) {
-      updateData.image = `/uploads/${req.file.filename}`;
+      updateData.image = req.file.path;
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
