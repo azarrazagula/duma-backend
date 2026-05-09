@@ -95,6 +95,13 @@ This documentation tracks the step-by-step development of the DUMA Streetwear AP
 
 ---
 
+## 🔐 Admin Credentials (Test Access)
+To access the Admin Panel management features, use the following credentials:
+- **Email:** `asker@gmail.com`
+- **Password:** `123456`
+
+---
+
 ## ⚙️ Installation & Running
 
 1. **Clone & Install:**
